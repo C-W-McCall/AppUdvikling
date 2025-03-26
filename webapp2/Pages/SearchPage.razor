@@ -1,12 +1,37 @@
 @page "/search"
 @inject HttpClient Http
 
-<h3>SearchPage</h3>
+<h3>Søgning </h3>
+
+<div>
+        
+    Identifier:
+    <InputText @bind-Value="query" />
+        
+    <button class="btn-primary" @onclick="StartsWith">Starter med</button>
+    <button class="btn-primary" @onclick="Contains">Indeholder</button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(beskrivelse))
+{
+    <p>@beskrivelse</p>
+}
+
+@if (viewedWords.Length > antalOrdAtVise)
+{
+    <button class="btn-primary" @onclick="VisFlereOrd">Vis 10 flere</button>
+}
+
+
+@if (viewedWords.Length > antalOrdAtVise)
+{
+    <button class="btn-primary" @onclick="VisalleOrd">Vis alle ord</button>
+}
 
 @if (viewedWords != null)
 {
     <ul>
-        @foreach (var w in viewedWords)
+        @foreach (var w in viewedWords.Take(antalOrdAtVise))
         {
             <li>@w</li>
         }
@@ -18,6 +43,13 @@ else
 }
 @code {
     string[]? viewedWords; // the words visible on the page
+
+    string? query;
+    
+    string? beskrivelse;
+    
+    int antalOrdAtVise = 100;
+
     
     protected override async Task OnInitializedAsync()
     {
@@ -31,4 +63,38 @@ else
         string content = await Http.GetStringAsync("sample-data/words.txt");
         return content.Split("\n");
     }
+    
+    private async Task StartsWith()
+    {
+        string[] allWord = await LoadAllWords();
+        viewedWords = allWord.Where((w) => w.StartsWith(query)).ToArray();
+        beskrivelse = $"{viewedWords.Length} ord som starter med '{query}'";
+        StateHasChanged();
+    }
+    
+    private async Task Contains()
+    {
+        string[] allWord = await LoadAllWords();
+        viewedWords = allWord.Where((w) => w.Contains(query)).ToArray();
+        beskrivelse = $"Herunder er {viewedWords.Length} ord som indeholder med '{query}'";
+        StateHasChanged();
+    }
+    
+    private void VisFlereOrd()
+    {
+        antalOrdAtVise += 10;
+    }
+
+    private void VisalleOrd()
+    {
+        if (viewedWords != null)
+        {
+            antalOrdAtVise = viewedWords.Length;
+        }
+        else
+        {
+            antalOrdAtVise = 0;
+        }
+    }
+
 }
